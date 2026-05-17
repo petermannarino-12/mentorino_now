@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import Webhook from '@clerk/nextjs/server'
+import { verifyWebhookSignature } from '@clerk/nextjs/webhooks'
 
 const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET || ''
 
@@ -9,13 +9,16 @@ export async function POST(request: NextRequest) {
     const payload = await request.text()
     const signature = request.headers.get('x-clerk-signature') || ''
 
-    const wh = new Webhook(WEBHOOK_SECRET)
     let event
-
-    try {
-      event = wh.verify(payload, signature)
-    } catch {
-      // If no secret, just parse the payload for development
+    
+    if (WEBHOOK_SECRET) {
+      event = await verifyWebhookSignature({
+        payload,
+        signature,
+        secret: WEBHOOK_SECRET,
+      })
+    } else {
+      // For development without webhook secret
       event = JSON.parse(payload)
     }
 
@@ -26,13 +29,11 @@ export async function POST(request: NextRequest) {
         const fullName = [first_name, last_name].filter(Boolean).join(' ') || 'User'
 
         if (email) {
-          // Check if there's an accepted application for this email
           const application = await prisma.application.findUnique({
             where: { userEmail: email },
           })
 
           if (application && application.status === 'accepted') {
-            // Create user record
             await prisma.user.upsert({
               where: { email },
               update: {
