@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Application {
+  id                String   @id @default(cuid())
+  userName          String
+  userEmail         String   @unique
+  userPhone         String
+  mentorType        String
+  meetingPreference String
+  frequency         String
+  goals             String
+  seriousness       Int
+  status            String   @default("pending") // pending, accepted, rejected
+  createdAt         DateTime @default(now())
+  reviewedAt        DateTime?
+  reviewedBy        String?
+
+  user              User?
+}
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  fullName      String
+  role          String       @default("mentee") // mentee, mentor
+  isActive      Boolean      @default(true)
+  clerkId       String?      @unique
+  applicationId String?      @unique
+  application   Application? @relation(fields: [applicationId], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  userId    String
+  userName  String
+  date      String
+  time      String
+  status    String   @default("upcoming") // upcoming, completed, cancelled
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model NetworkEvent {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  date        String
+  time        String
+  location    String
+  attendees   String[] @default([])
+  createdAt   DateTime @default(now())
+}
+
+model TaskActivity {
+  id        String   @id @default(cuid())
+  userId    String
+  userName  String
+  category  String
+  title     String
+  description String?
+  status    String   @default("pending") // pending, reviewed
+  adminResponse String?
+  createdAt DateTime @default(now())
+}
