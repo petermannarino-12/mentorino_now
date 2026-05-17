@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendApplicationAccepted, sendApplicationRejected } from '@/lib/email'
 
-// PUT /api/applications/[id]/accept
-export async function PUT(request: NextRequest) {
+interface RouteParams {
+  params: Promise<{
+    id: string
+  }>
+}
+
+export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const { searchParams } = new URL(request.url)
     const action = searchParams.get('action')
-    const id = request.url.split('/api/applications/')[1]?.split('/')[0]
+    const { id } = await params
 
     if (!id) {
       return NextResponse.json({ error: 'Application ID required' }, { status: 400 })
@@ -22,7 +27,6 @@ export async function PUT(request: NextRequest) {
     }
 
     if (action === 'accept') {
-      // Update application status
       const updated = await prisma.application.update({
         where: { id },
         data: {
@@ -31,12 +35,10 @@ export async function PUT(request: NextRequest) {
         },
       })
 
-      // Send acceptance email
       await sendApplicationAccepted(application.userEmail, application.userName)
 
       return NextResponse.json(updated)
     } else if (action === 'reject') {
-      // Update application status
       const updated = await prisma.application.update({
         where: { id },
         data: {
@@ -45,7 +47,6 @@ export async function PUT(request: NextRequest) {
         },
       })
 
-      // Send rejection email
       await sendApplicationRejected(application.userEmail, application.userName)
 
       return NextResponse.json(updated)

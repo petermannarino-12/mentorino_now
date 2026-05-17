@@ -6,6 +6,9 @@ import typescriptEslintPlugin from "@typescript-eslint/eslint-plugin";
 import typescriptParser from "@typescript-eslint/parser";
 
 export default [
+  {
+    ignores: ["_pages_old/**", "_src_old/**", "backup/**"],
+  },
   js.configs.recommended,
   {
     files: ["**/*.{ts,tsx}"],
